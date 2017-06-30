@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta content="Calculator used to get bearing of an object in relation to another." name="description">
+  <meta content="noodp" name="robots">
+  <meta name="author" content="Devin Carpenter">
+  <title>Trigonometric Bearing Calculator</title>
+  <style type="text/css">
+    html,body{
+      height: 100%;
+      width:100%;
+      margin:0;
+      padding:0;
+    }
+    body{
+      min-height: 100%;
+    }
+    .container{
+      padding: 0 8px 0 8px;
+      display: flex;
+      flex-direction: column;
+    }
+    input,label{
+      align-self: center;
+      margin-right: 8px;
+    }
+    label{
+      text-align: center;
+    }
+    input{
+      font-size: 1rem;
+    }
+    .topbar{
+      background-color: orangered;
+      height: 40px;
+    }
+    img{
+      flex:2 1 auto;
+      align-self: flex-start;
+      width:100%;
+      height: 100%;
+      max-width: 500px;
+      max-height: 500px;
+      object-fit: contain;
+    }
+    button{
+      align-self: flex-start;
+      padding:8px;
+      color :#333;
+      font-size: 1em;
+      background-color: orangered;
+      border: none;
+      box-shadow: -4px 4px 8px #aaa;
+      margin-bottom: 30px;
+    }
+    .coordinateContainer{
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 30px;
+      align-self: flex-start;
+    }
+    .graph .labels.x-labels {
+      text-anchor: middle;
+    }
+    .graph .labels.y-labels {
+      text-anchor: end;
+    }
+    .graph {
+      height:150px;
+      width:300px;
+    }
+    .graph .grid {
+      stroke: #ccc;
+      stroke-dasharray: 0;
+      stroke-width: 1;
+    }
+    .graph .graphLine {
+      stroke: blue;
+      stroke-dasharray: 0;
+      stroke-width: 3;
+    }
+    .labels {
+      font-size: 13px;
+    }
+    .label-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 12px;
+      fill: black;
+    }
+    .data {
+      fill: red;
+      stroke-width: 1;
+    }
+    .smallMessage{
+      display: initial;
+    }
+    .mediumMessage{
+      display: none;
+    }
+    .red{
+      color:red;
+      text-decoration: underline;
+    }
+    /*Media query break for bigger than 500px*/
+    @media screen and (min-width: 500px){
+      .graph {
+        height:300px;
+        width:500px;
+      }
+      .smallMessage{
+        display: none;
+      }
+      .mediumMessage{
+        display: initial;
+      }
+    }
+  </style>
+  <script type="text/javascript">
+    //Main app function to prevent namespace clashes
+    bearingCalculator = function(){
+      var getDirection = function(Px,Py,Dx,Dy){
+        var dx;
+        var dy;
+        var dysign;
+        var dxsign;
+        var theta=0;
+        var radian=0;
+        var pi = 3.14159
+
+        dx = Dx - Px;
+        dy = Dy - Py;
+
+        // Get Negatives and Positives where 1=neg; 0=pos
+        dx >= 0 ? dxsign = 0 : dxsign = 1;
+        dy >= 0 ? dysign = 0 : dysign = 1;
+
+        //Get Absolute Values
+        dx = Math.abs(dx);
+        dy = Math.abs(dy);
+
+        //quadrants 2 and 3
+        if(dxsign === 1){
+          if(dysign === 1){//Quadrant Q2
+            radian =  Math.atan(dx/dy);
+            theta = 90 + (radian * (180/pi));
+            theta = Math.round(theta*1000)/1000; // round to nearest thousandth place
+            alert("Q2 bearing: "+theta);
+            return theta;
+          }else if(dysign === 0){//Quadrant Q3
+            radian =  Math.atan((dy/dx));
+            theta = 180 + (radian * (180/pi));
+            theta = Math.round(theta*1000)/1000; // round to nearest thousandth place
+            alert("Q3 bearing: "+theta);
+            return theta;
+          }else{//error
+            alert("ERROR: problem with dxsign and or dysign");
+          }
+        }else if (dxsign === 0){// quadrants 1 & 4
+          if(dysign===1){//Quadrant 1
+            radian = Math.atan((dy/dx));
+            theta = radian * (180/pi); // radians to degrees
+            theta = Math.round(theta*1000)/1000; // round to nearest thousandth place
+            alert("Q1 bearing: "+theta);
+            return theta;
+          }else if(dysign===0){//Quadrant 4
+            radian = Math.atan((dx/dy));
+            theta = 270 + (radian * (180/pi));
+            theta = Math.round(theta*1000)/1000; // round to nearest thousandth place
+            alert("Q4 bearing: "+theta);
+            return theta;
+          }else{//error
+            alert("ERROR: problem with dxsign and or dysign");
+          }
+        }else{//Error
+          alert("ERROR: problem with dxsign and or dysign");
+        }
+      }
+      var setSVGGraph = function(bearing,x1,y1,x2,y2){
+        
+        //Offset changes dynamically to make svg graph look good for all devices
+        var newXOffset = 5,newYOffset = 5,textYOffset = 30,letterXOffset = 30,letterXOffset = 20,XBound = 300,YBound = 150;
+        
+        if(window.matchMedia("(min-width: 500px)").matches){
+          newXOffset = 90;
+          newYOffset = 5;
+          textYOffset = newYOffset + 30;
+          letterXOffset = newXOffset + 20;
+          XBound = 500;
+          YBound = 300;
+        }
+        var newX1 = Number(x1) + newXOffset; //graph X1 plot
+        var newY1 = Number(y1) + newYOffset;//graph Y1 plot
+        var textX1 = newX1; //text X1 plot
+        var textY1 = newY1 + textYOffset;//text Y1 plot
+        var letterX1 = newX1 + letterXOffset; //letter X1 plot
+        var letterY1 = newY1;//letter Y1 plot
+
+        var newX2 = Number(x2) + newXOffset;//graph X2 plot
+        var newY2 = Number(y2) + newYOffset;//graph Y2 plot
+        var textX2 = newX2; //text X1 plot
+        var textY2 = newY2 + textYOffset;//text Y1 plot
+        var letterX2 = newX2 + letterXOffset; //letter X1 plot
+        var letterY2 = newY2;//letter Y1 plot
+
+        var graph = document.querySelector(".graph");
+        //Adds the grey dotted border lines
+        graph.innerHTML = '<g class="grid x-grid" id="xGrid">'+
+          '<line x1="'+newXOffset+'" x2="'+newXOffset+'" y1="'+newYOffset+'" y2="'+YBound+'"></line>'+
+        '</g>'+
+        '<g class="grid y-grid" id="yGrid">'+
+          '<line x1="'+newXOffset+'" x2="'+XBound+'" y1="'+newYOffset+'" y2="'+newYOffset+'"></line>'+
+        '</g>';
+
+        // Adds the line in between the plot points.
+        graph.innerHTML += '<g class="graphLine y-grid" id="yGrid">'+
+          '<line x1="'+newX1+'" x2="'+newX2+'" y1="'+newY1+'" y2="'+newY2+'"></line>'+
+        '</g>';
+
+        graph.innerHTML += '<text x="'+letterX1+'" y="'+letterY1+'" font-family="sans-serif" font-size="20px" fill="black">A</text>'+
+          '<text x="'+letterX2+'" y="'+letterY2+'" font-family="sans-serif" font-size="20px" fill="black">B</text>';
+
+        // Adds the text and the circle
+        graph.innerHTML +=  '<g class="data" data-setname="bearing graph">'+
+        '<text x="'+newXOffset+'" y="'+textYOffset+'" font-family="sans-serif" font-size="20px" fill="black">(0,0)</text>'+
+        '<circle cx="'+newXOffset+'" cy="'+newYOffset+'" data-value="0,0" r="4"></circle>'+ <!-- Base circle for the other coordinates -->
+        '<text x="'+textX1+'" y="'+textY1+'" font-family="sans-serif" font-size="20px" fill="black">('+x1+','+y1+')</text>'+
+        '<circle cx="'+newX1+'" cy="'+newY1+'" data-value="0,0" r="4"></circle> <!-- Base circle for the other coordinates -->'+
+        '<text x="'+textX2+'" y="'+textY2+'" font-family="sans-serif" font-size="20px" fill="black">('+x2+','+y2+')</text>'+
+        '<circle cx="'+newX2+'" cy="'+newY2+'" data-value="8.1" r="4"></circle>'+
+        '</g>';
+
+      }
+      document.getElementById("submitCoordinates").addEventListener("click", function(){
+        var coordinates = document.querySelectorAll('.coordinate');
+        console.log(coordinates[0].value);
+        //TODO: put in messages if inputs are empty
+        var bearing = getDirection(coordinates[0].value,coordinates[1].value,coordinates[2].value,coordinates[3].value);
+        document.getElementById("bearing").innerHTML = "Bearing: " + bearing;
+        setSVGGraph(bearing,coordinates[0].value,coordinates[1].value,coordinates[2].value,coordinates[3].value);
+      },false);
+    }
+    window.addEventListener('load', bearingCalculator, false);
+  </script>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="container">
+    <h2>Trigonometric Bearing Calculator</h2>
+    <p>I had a little trouble naming this tool, as it has the same layout as a Trigonometric Unit Circle
+    and even uses Quadrants to help with some of the math.</p>
+    <h2>Main Use</h2>
+    <p> Takes the coordinates of an object (you, or any object on the page) and a destination, then calculates what
+    degree (bearing) that destination is located at.The calculator is based off of the trigonometric unit circle, and so instead of 360 being true north, it's 360 degrees on the unit circle, and the bearing runs counter clockwise.</p>
+
+    <p>A normal unit circle looks like this: </p>
+    <br>
+    <img src="600px-Unit_circle_angles.png">
+    <br>
+    <p>and so this calculator is modeled the same way, with the first object (x<sub>1</sub>,y<sub>1</sub>) coordinates being the
+    center of the circle, and the bearing being the angle degree on the unit circle.</p>
+    <p>However, remember that coordinates in a browser start from the top left, and so coordinates would look like this:</p>
+    <div class="plotBox">
+      <svg version="1.2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="graph" aria-labelledby="title" role="img">
+        <g class="grid x-grid smallMessage" id="xGrid">
+          <line x1="5" x2="5" y1="5" y2="371"></line>
+        </g>
+        <g class="grid y-grid smallMessage" id="yGrid">
+          <line x1="5" x2="705" y1="5" y2="5"></line>
+        </g>
+        <g class="grid x-grid mediumMessage" id="xGrid">
+          <line x1="90" x2="90" y1="5" y2="371"></line>
+        </g>
+        <g class="grid y-grid mediumMessage" id="yGrid">
+          <line x1="90" x2="705" y1="5" y2="5"></line>
+        </g>
+        <!-- <g class="labels x-labels">
+          <text x="100" y="400">2008</text>
+          <text x="246" y="400">2009</text>
+          <text x="392" y="400">2010</text>
+          <text x="538" y="400">2011</text>
+          <text x="684" y="400">2012</text>
+          <text x="400" y="440" class="label-title">Year</text>
+        </g>
+        <g class="labels y-labels">
+          <text x="80" y="15">15</text>
+          <text x="80" y="131">10</text>
+          <text x="80" y="248">5</text>
+          <text x="80" y="373">0</text>
+          <text x="50" y="200" class="label-title">Price</text>
+        </g> -->
+        
+        <g class="graphLine y-grid smallMessage" id="yGrid">
+          <line x1="55" x2="105" y1="55" y2="105"></line>
+        </g>
+        <g class="data smallMessage" data-setname="bearing graph">
+          <text x="5" y="30" font-family="sans-serif" font-size="20px" fill="black">(0,0)</text>
+          <circle cx="5" cy="5" data-value="0,0" r="4"></circle> <!-- Base circle for the other coordinates -->
+          <text x="55" y="85" font-family="sans-serif" font-size="20px" fill="black">(50,50)</text>
+          <circle cx="55" cy="55" data-value="8.1" r="4"></circle>
+          <text x="105" y="135" font-family="sans-serif" font-size="20px" fill="black">(100,100)</text>
+          <circle cx="105" cy="105" data-value="7.7" r="4"></circle>
+        </g>
+        <g class="graphLine y-grid mediumMessage" id="yGrid">
+          <line x1="240" x2="240" y1="155" y2="205"></line>
+        </g>
+        <g class="graphLine x-grid mediumMessage" id="xGrid">
+          <line x1="390" x2="140" y1="205" y2="55"></line>
+        </g>
+        <g class="data mediumMessage" data-setname="bearing graph">
+          <text x="90" y="30" font-family="sans-serif" font-size="20px" fill="black">(0,0)</text>
+          <circle cx="90" cy="5" data-value="0,0" r="4"></circle> <!-- Base circle for the other coordinates -->
+          <text x="240" y="185" font-family="sans-serif" font-size="20px" fill="black">(150,150)</text>
+          <circle cx="240" cy="155" data-value="8.1" r="4"></circle>
+          <text x="240" y="235" font-family="sans-serif" font-size="20px" fill="black">(150,200)</text>
+          <circle cx="240" cy="205" data-value="7.7" r="4"></circle>
+          
+          <text x="390" y="235" font-family="sans-serif" font-size="20px" fill="black">(300,200)</text>
+          <circle cx="390" cy="205" data-value="6.8" r="4"></circle>
+          <text x="140" y="85" font-family="sans-serif" font-size="20px" fill="black">(50,50)</text>
+          <circle cx="140" cy="55" data-value="6.7" r="4"></circle>
+        </g>
+      </svg>
+    </div>
+    <p class="smallMessage">Going over 300-x and 150-y is not recommended.</p>
+    <p class="mediumMessage">Going over 500-x and 300-y is not recommended.</p>
+    <h4 class="red" id="bearing"></h4>
+    <h2>Enter Coordinates to get a bearing:</h2>
+    <h4>Object A</h4>
+    <div class="coordinateContainer">
+      <label>Coordinate x<sub>1</sub></label>
+      <input class="coordinate" type="number" name="x-coordinate-1" value="50">
+      <label>Coordinate y<sub>1</sub></label>
+      <input class="coordinate" type="number" name="y-coordinate-1" value="50">
+    </div>
+    <h4>Object B</h4>
+    <div class="coordinateContainer">
+      <label>Coordinate x<sub>2</sub></label>
+      <input class="coordinate" type="number" name="x-coordinate-2" value="100">
+      <label>Coordinate y<sub>2</sub></label>
+      <input class="coordinate" type="number" name="y-coordinate-2" value="100">
+    </div>
+    <button id="submitCoordinates" alt="Unit Circle" name="Unit Circle">Get Bearing!</button>
+  </div>
+  
+  
+  
+</body>
+</html>
